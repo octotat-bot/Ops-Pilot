@@ -16,7 +16,17 @@ const delegationRouter = require('./routes/delegationRoutes');
 
 const app = express();
 
-app.use(cors());
+// CORS Configuration
+const corsOptions = {
+    origin: [
+        process.env.FRONTEND_URL || 'https://ops-pilot-two.vercel.app',
+        'https://ops-pilot-two.vercel.app'
+    ],
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
