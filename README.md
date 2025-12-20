@@ -1,3 +1,5 @@
+![OpsPilot Cover Art](frontend/public/cover-image.png)
+
 # OpsPilot - Internal Operations Management Platform
 
 A comprehensive workflow management system built to streamline internal operations, approvals, and resource requests. OpsPilot helps teams manage their operational workflows efficiently with role-based access control, multi-level approvals, and powerful analytics.
