@@ -8,7 +8,7 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
 
     if (req.user.role === 'manager') {
         query.role = 'manager';
-        
+
         query._id = { $ne: req.user._id };
     }
 
@@ -39,7 +39,7 @@ exports.getUser = catchAsync(async (req, res, next) => {
 });
 
 exports.updateUser = catchAsync(async (req, res, next) => {
-    const { role, department, manager, isActive } = req.body;
+    const { role, manager, isActive } = req.body;
 
     if (req.body.password) {
         return next(new AppError('This route is not for password updates. Please use the reset password feature.', 400));
@@ -51,7 +51,6 @@ exports.updateUser = catchAsync(async (req, res, next) => {
     }
 
     if (role !== undefined) user.role = role;
-    if (department !== undefined) user.department = department;
     if (manager !== undefined) user.manager = manager;
     if (isActive !== undefined) user.isActive = isActive;
 

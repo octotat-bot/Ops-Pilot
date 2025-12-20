@@ -18,10 +18,10 @@ exports.getRecentActivity = catchAsync(async (req, res, next) => {
         // 1. See actions on requests created by me:
         const myRequestIds = await Request.find({ requester: req.user._id }).distinct('_id');
 
-        // 2. If Manager, see requests from my department:
+        // 2. If Manager, see requests from my direct reports:
         let teamRequestIds = [];
-        if (req.user.role === 'manager' && req.user.department) {
-            const teamUserIds = await User.find({ department: req.user.department }).distinct('_id');
+        if (req.user.role === 'manager') {
+            const teamUserIds = await User.find({ manager: req.user._id }).distinct('_id');
             teamRequestIds = await Request.find({ requester: { $in: teamUserIds } }).distinct('_id');
         }
 

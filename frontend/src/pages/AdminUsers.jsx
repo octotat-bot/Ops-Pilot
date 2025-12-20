@@ -32,8 +32,7 @@ const AdminUsers = () => {
     const handleSaveEdit = async () => {
         try {
             await api.patch(`/users/${editDialog.user._id}`, {
-                role: editDialog.user.role,
-                department: editDialog.user.department
+                role: editDialog.user.role
             });
             await fetchUsers();
             setEditDialog({ isOpen: false, user: null });
@@ -100,7 +99,7 @@ const AdminUsers = () => {
                         <tr>
                             <th className="px-6 py-3">User</th>
                             <th className="px-6 py-3">Role</th>
-                            <th className="px-6 py-3">Department</th>
+
                             <th className="px-6 py-3">Email</th>
                             <th className="px-6 py-3">Status</th>
                             <th className="px-6 py-3 text-right">Actions</th>
@@ -119,8 +118,8 @@ const AdminUsers = () => {
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${u.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                                            u.role === 'manager' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                                'bg-gray-50 text-gray-700 border-gray-200'
+                                        u.role === 'manager' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                            'bg-gray-50 text-gray-700 border-gray-200'
                                         }`}>
                                         {u.role === 'admin' && <Shield size={12} />}
                                         {u.role === 'manager' && <Briefcase size={12} />}
@@ -128,7 +127,7 @@ const AdminUsers = () => {
                                         <span className="capitalize">{u.role}</span>
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 text-text-secondary">{u.department || '-'}</td>
+
                                 <td className="px-6 py-4 text-text-secondary font-mono text-xs">{u.email}</td>
                                 <td className="px-6 py-4">
                                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${u.isActive !== false ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
@@ -177,7 +176,7 @@ const AdminUsers = () => {
                 </table>
             </div>
 
-            {}
+            { }
             {editDialog.isOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -209,16 +208,7 @@ const AdminUsers = () => {
                                     <option value="admin">Admin</option>
                                 </select>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-text-secondary mb-1">Department</label>
-                                <input
-                                    type="text"
-                                    value={editDialog.user.department || ''}
-                                    onChange={(e) => setEditDialog({ ...editDialog, user: { ...editDialog.user, department: e.target.value } })}
-                                    className="input"
-                                    placeholder="e.g., Engineering, HR, Sales"
-                                />
-                            </div>
+
                         </div>
                         <div className="flex justify-end gap-2 mt-6">
                             <button onClick={() => setEditDialog({ isOpen: false, user: null })} className="btn btn-secondary">
@@ -232,7 +222,7 @@ const AdminUsers = () => {
                 </div>
             )}
 
-            {}
+            { }
             {passwordDialog.isOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -270,7 +260,7 @@ const AdminUsers = () => {
                 </div>
             )}
 
-            {}
+            { }
             <ConfirmDialog
                 isOpen={confirmDialog.isOpen}
                 onClose={() => setConfirmDialog({ isOpen: false, type: '', user: null })}

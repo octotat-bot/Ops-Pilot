@@ -12,7 +12,7 @@ const signToken = id => {
 
 const createSendToken = (user, statusCode, res) => {
     const token = signToken(user._id);
-    user.password = undefined; 
+    user.password = undefined;
 
     res.status(statusCode).json({
         status: 'success',
@@ -30,7 +30,7 @@ exports.signup = catchAsync(async (req, res, next) => {
         email: req.body.email,
         password: req.body.password,
         role: req.body.role,
-        department: req.body.department,
+
         manager: req.body.manager
     });
 

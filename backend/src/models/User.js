@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
         enum: ['active', 'inactive'],
         default: 'active'
     },
-    department: String,
+
     manager: {
         type: mongoose.Schema.ObjectId,
         ref: 'User'

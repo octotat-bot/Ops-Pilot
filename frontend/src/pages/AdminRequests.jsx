@@ -133,7 +133,7 @@ const AdminRequests = () => {
                 </div>
             </div>
 
-            {}
+            { }
             {requests.length > 0 && (
                 <div className="flex items-center gap-3 mb-4 flex-wrap">
                     <select
@@ -213,7 +213,7 @@ const AdminRequests = () => {
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="text-sm text-text-primary">{req.requester?.name || 'Unknown User'}</div>
-                                    <div className="text-xs text-text-secondary">{req.requester?.department || ''}</div>
+
                                 </td>
                                 <td className="px-6 py-4">
                                     {getStatusBadge(req.status)}

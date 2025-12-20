@@ -43,7 +43,7 @@ const Profile = () => {
     };
 
     const handleSave = async () => {
-        
+
         console.log('Saving profile:', editData);
         setIsEditing(false);
     };
@@ -68,7 +68,7 @@ const Profile = () => {
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
-            {}
+            { }
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-text-primary">My Profile</h1>
@@ -103,10 +103,10 @@ const Profile = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {}
+                { }
                 <div className="lg:col-span-1">
                     <div className="card p-0 overflow-hidden">
-                        {}
+                        { }
                         <div className="relative h-32 bg-gradient-to-br from-brand-primary to-[#16555c]">
                             <div className="absolute inset-0 bg-black/10"></div>
                             <div className="absolute inset-0 opacity-20">
@@ -115,7 +115,7 @@ const Profile = () => {
                             </div>
                         </div>
 
-                        {}
+                        { }
                         <div className="relative px-6 pb-6">
                             <div className="absolute -top-16 left-1/2 transform -translate-x-1/2">
                                 <div className="relative group">
@@ -151,7 +151,7 @@ const Profile = () => {
 
                                 <p className="text-text-secondary text-sm mb-6">{user?.email}</p>
 
-                                {}
+                                { }
                                 <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border-light">
                                     <div className="text-center">
                                         <div className="text-2xl font-bold text-brand-primary">{stats.requests}</div>
@@ -170,7 +170,7 @@ const Profile = () => {
                         </div>
                     </div>
 
-                    {}
+                    { }
                     <div className="card mt-6">
                         <div className="flex items-center gap-2 mb-4">
                             <Award className="text-yellow-500" size={20} />
@@ -201,9 +201,9 @@ const Profile = () => {
                     </div>
                 </div>
 
-                {}
+                { }
                 <div className="lg:col-span-2 space-y-6">
-                    {}
+                    { }
                     <div className="card">
                         <div className="flex items-center gap-2 mb-6">
                             <User className="text-brand-primary" size={20} />
@@ -222,25 +222,7 @@ const Profile = () => {
                                 <p className="text-xs text-text-muted mt-1">Email cannot be changed</p>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-text-secondary mb-2">
-                                    <Briefcase size={14} className="inline mr-2" />
-                                    Department
-                                </label>
-                                {isEditing ? (
-                                    <input
-                                        type="text"
-                                        value={editData.department}
-                                        onChange={(e) => setEditData({ ...editData, department: e.target.value })}
-                                        className="input"
-                                        placeholder="e.g., Engineering, HR, Sales"
-                                    />
-                                ) : (
-                                    <div className="input bg-bg-subtle">
-                                        {user?.department || 'Not specified'}
-                                    </div>
-                                )}
-                            </div>
+
 
                             <div>
                                 <label className="block text-sm font-medium text-text-secondary mb-2">
@@ -284,7 +266,7 @@ const Profile = () => {
                         </div>
                     </div>
 
-                    {}
+                    { }
                     <div className="card">
                         <div className="flex items-center gap-2 mb-6">
                             <Shield className="text-brand-primary" size={20} />
@@ -351,7 +333,7 @@ const Profile = () => {
                         </div>
                     </div>
 
-                    {}
+                    { }
                     {(user?.role === 'admin' || user?.role === 'manager') && (
                         <div className="card bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
                             <div className="flex gap-4">
