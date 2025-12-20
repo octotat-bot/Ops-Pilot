@@ -16,12 +16,25 @@ const delegationRouter = require('./routes/delegationRoutes');
 
 const app = express();
 
-// CORS Configuration
+// CORS Configuration - Allow production and all Vercel preview deployments
 const corsOptions = {
-    origin: [
-        process.env.FRONTEND_URL || 'https://ops-pilot-two.vercel.app',
-        'https://ops-pilot-two.vercel.app'
-    ],
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        // Allow production frontend
+        const allowedOrigins = [
+            'https://ops-pilot-two.vercel.app',
+            process.env.FRONTEND_URL
+        ];
+
+        // Allow all Vercel preview deployments (*.vercel.app)
+        if (origin.includes('vercel.app') || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     optionsSuccessStatus: 200
 };
