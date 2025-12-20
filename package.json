@@ -1,0 +1,25 @@
+{
+    "name": "opspilot",
+    "version": "1.0.0",
+    "description": "Internal Operations Management Platform",
+    "scripts": {
+        "install:all": "cd frontend && npm install && cd ../backend && npm install",
+        "dev:frontend": "cd frontend && npm run dev",
+        "dev:backend": "cd backend && npm run dev",
+        "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+        "build": "cd frontend && npm run build",
+        "build:frontend": "cd frontend && npm run build",
+        "start:backend": "cd backend && npm start"
+    },
+    "keywords": [
+        "operations",
+        "workflow",
+        "approval",
+        "management"
+    ],
+    "author": "Your Team",
+    "license": "ISC",
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}
