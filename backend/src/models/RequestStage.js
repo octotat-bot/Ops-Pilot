@@ -24,5 +24,10 @@ const requestStageSchema = new mongoose.Schema({
     comments: String
 }, { timestamps: true });
 
+// Indexes for performance
+requestStageSchema.index({ request: 1 });
+requestStageSchema.index({ assignedToUser: 1, status: 1 });
+requestStageSchema.index({ createdAt: -1 });
+
 const RequestStage = mongoose.model('RequestStage', requestStageSchema);
 module.exports = RequestStage;

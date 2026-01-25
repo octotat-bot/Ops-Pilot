@@ -39,42 +39,50 @@ exports.getAnalytics = catchAsync(async (req, res, next) => {
         ? approvalTimes.reduce((a, b) => a + b, 0) / approvalTimes.length
         : 0;
 
+    // Count requests by requester
     const requesterCounts = {};
     requests.forEach(req => {
         const requesterId = req.requester?._id?.toString() || req.requester?.toString();
-        requesterCounts[requesterId] = (requesterCounts[requesterId] || 0) + 1;
+        if (requesterId) {
+            requesterCounts[requesterId] = (requesterCounts[requesterId] || 0) + 1;
+        }
     });
 
-    const topRequesters = await Promise.all(
-        Object.entries(requesterCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5)
-            .map(async ([userId, count]) => {
-                const user = await User.findById(userId).select('name email');
-                return {
-                    user: user?.name || 'Unknown',
-                    count
-                };
-            })
-    );
+    // Get top 5 requester IDs
+    const topRequesterEntries = Object.entries(requesterCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+    
+    // Batch fetch all top requesters in one query
+    const topRequesterIds = topRequesterEntries.map(([id]) => id);
+    const topRequesterUsers = await User.find({ _id: { $in: topRequesterIds } }).select('name email');
+    const userMap = new Map(topRequesterUsers.map(u => [u._id.toString(), u]));
+    
+    const topRequesters = topRequesterEntries.map(([userId, count]) => ({
+        user: userMap.get(userId)?.name || 'Unknown',
+        count
+    }));
 
+    // Count requests by template
     const templateCounts = {};
     requests.forEach(req => {
         const templateId = req.template?._id?.toString() || req.template?.toString();
-        templateCounts[templateId] = (templateCounts[templateId] || 0) + 1;
+        if (templateId) {
+            templateCounts[templateId] = (templateCounts[templateId] || 0) + 1;
+        }
     });
 
-    const templateUsage = await Promise.all(
-        Object.entries(templateCounts)
-            .sort((a, b) => b[1] - a[1])
-            .map(async ([templateId, count]) => {
-                const template = await Template.findById(templateId).select('title');
-                return {
-                    template: template?.title || 'Unknown',
-                    count
-                };
-            })
-    );
+    // Batch fetch all templates in one query
+    const templateIds = Object.keys(templateCounts);
+    const templatesData = await Template.find({ _id: { $in: templateIds } }).select('title');
+    const templateMap = new Map(templatesData.map(t => [t._id.toString(), t]));
+
+    const templateUsage = Object.entries(templateCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([templateId, count]) => ({
+            template: templateMap.get(templateId)?.title || 'Unknown',
+            count
+        }));
 
     const totalRequests = requests.length;
     const slaBreached = requests.filter(req => req.isSlaBreached).length;
@@ -129,13 +137,13 @@ exports.getBottleneckAnalysis = catchAsync(async (req, res, next) => {
     const stages = await RequestStage.find({
         createdAt: { $gte: daysAgo },
         status: { $in: ['approved', 'rejected'] }
-    }).populate('assignedTo', 'name email role');
+    }).populate('assignedToUser', 'name email role');
 
     const stageMetrics = {};
 
     stages.forEach(stage => {
-        const approverName = stage.assignedTo?.name || 'Unknown';
-        const approverRole = stage.assignedTo?.role || 'Unknown';
+        const approverName = stage.assignedToUser?.name || 'Unknown';
+        const approverRole = stage.assignedToUser?.role || 'Unknown';
         const key = `${approverRole}`;
 
         if (!stageMetrics[key]) {
@@ -149,8 +157,8 @@ exports.getBottleneckAnalysis = catchAsync(async (req, res, next) => {
             };
         }
 
-        if (stage.actionTakenAt) {
-            const timeSpent = (new Date(stage.actionTakenAt) - new Date(stage.createdAt)) / (1000 * 60 * 60); 
+        if (stage.actionDate) {
+            const timeSpent = (new Date(stage.actionDate) - new Date(stage.createdAt)) / (1000 * 60 * 60); 
             stageMetrics[key].totalTime += timeSpent;
             stageMetrics[key].count += 1;
         }
@@ -187,20 +195,20 @@ exports.getApproverPerformance = catchAsync(async (req, res, next) => {
     const stages = await RequestStage.find({
         createdAt: { $gte: daysAgo },
         status: { $in: ['approved', 'rejected'] },
-        actionTakenAt: { $exists: true }
-    }).populate('assignedTo', 'name email role');
+        actionDate: { $exists: true }
+    }).populate('assignedToUser', 'name email role');
 
     const approverMetrics = {};
 
     stages.forEach(stage => {
-        const approverId = stage.assignedTo?._id?.toString();
+        const approverId = stage.assignedToUser?._id?.toString();
         if (!approverId) return;
 
         if (!approverMetrics[approverId]) {
             approverMetrics[approverId] = {
-                approver: stage.assignedTo.name,
-                email: stage.assignedTo.email,
-                role: stage.assignedTo.role,
+                approver: stage.assignedToUser.name,
+                email: stage.assignedToUser.email,
+                role: stage.assignedToUser.role,
                 totalApprovals: 0,
                 totalRejections: 0,
                 totalTime: 0,
@@ -209,7 +217,7 @@ exports.getApproverPerformance = catchAsync(async (req, res, next) => {
             };
         }
 
-        const timeSpent = (new Date(stage.actionTakenAt) - new Date(stage.createdAt)) / (1000 * 60 * 60); 
+        const timeSpent = (new Date(stage.actionDate) - new Date(stage.createdAt)) / (1000 * 60 * 60); 
         approverMetrics[approverId].totalTime += timeSpent;
         approverMetrics[approverId].responseTimes.push(timeSpent);
         approverMetrics[approverId].count += 1;
@@ -355,15 +363,21 @@ exports.getSLACompliance = catchAsync(async (req, res, next) => {
         complianceRate: metric.total > 0 ? Math.round((metric.onTime / metric.total) * 100 * 10) / 10 : 100
     })).sort((a, b) => a.complianceRate - b.complianceRate); 
 
-    const recentBreaches = breachedRequests.slice(0, 10).map(req => ({
-        requestId: req._id,
-        template: req.template?.title,
-        requester: req.requester?.name,
-        createdAt: req.createdAt,
-        slaDeadline: req.slaDeadline,
-        status: req.status,
-        daysOverdue: Math.ceil((new Date() - new Date(req.slaDeadline)) / (1000 * 60 * 60 * 24))
-    }));
+    const recentBreaches = breachedRequests.slice(0, 10).map(req => {
+        // Calculate SLA deadline if not stored (for backward compatibility)
+        const slaDeadline = req.slaDeadline || new Date(new Date(req.createdAt).getTime() + (req.template?.slaHours || 24) * 60 * 60 * 1000);
+        const daysOverdue = Math.ceil((new Date() - new Date(slaDeadline)) / (1000 * 60 * 60 * 24));
+        
+        return {
+            requestId: req._id,
+            template: req.template?.title,
+            requester: req.requester?.name,
+            createdAt: req.createdAt,
+            slaDeadline,
+            status: req.status,
+            daysOverdue: daysOverdue > 0 ? daysOverdue : 0
+        };
+    });
 
     res.status(200).json({
         status: 'success',

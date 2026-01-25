@@ -11,6 +11,7 @@ const activitySchema = new mongoose.Schema({
             'request_delegated',
             'template_created',
             'template_updated',
+            'template_deleted',
             'user_registered',
             'user_updated',
             'user_activated',
@@ -39,7 +40,10 @@ const activitySchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// Indexes for performance
 activitySchema.index({ createdAt: -1 });
+activitySchema.index({ user: 1 });
+activitySchema.index({ request: 1 });
 
 const Activity = mongoose.model('Activity', activitySchema);
 module.exports = Activity;

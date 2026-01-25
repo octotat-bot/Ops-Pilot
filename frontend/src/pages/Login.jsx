@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Lock, Mail, User, Briefcase, Loader2, AlertCircle, CheckCircle2, XCircle, Zap, Shield, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Lock, Mail, User, Loader2, AlertCircle, CheckCircle2, XCircle, Zap, Shield, TrendingUp } from 'lucide-react';
 
 const AuthPage = () => {
     const { login, signup, user } = useAuth();
@@ -16,8 +16,7 @@ const AuthPage = () => {
         name: '',
         email: '',
         password: '',
-        passwordConfirm: '',
-        role: 'employee'
+        passwordConfirm: ''
     });
 
     useEffect(() => {
@@ -65,12 +64,11 @@ const AuthPage = () => {
                     throw new Error("Passwords do not match");
                 }
                 result = await signup({
-                    name: formData.name,
-                    email: formData.email,
-                    password: formData.password,
-                    passwordConfirm: formData.passwordConfirm,
-                    role: formData.role
-                });
+                                    name: formData.name,
+                                    email: formData.email,
+                                    password: formData.password,
+                                    passwordConfirm: formData.passwordConfirm
+                                });
             }
 
             if (result.success) {
@@ -208,22 +206,7 @@ const AuthPage = () => {
                                             />
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-semibold text-[#1c2b2d]">Role</label>
-                                        <div className="relative">
-                                            <Briefcase className="absolute left-3 top-3 text-[#6f8487]" size={18} />
-                                            <select
-                                                name="role"
-                                                className="input pl-11 w-full"
-                                                value={formData.role}
-                                                onChange={handleChange}
-                                            >
-                                                <option value="employee">Employee</option>
-                                                <option value="manager">Manager</option>
-                                                <option value="admin">System Admin</option>
-                                            </select>
-                                        </div>
-                                    </div>
+                                    {/* Role is assigned by admins after signup for security */}
                                 </>
                             )}
 

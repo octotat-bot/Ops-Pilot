@@ -50,14 +50,16 @@ module.exports = (err, req, res, next) => {
     if (process.env.NODE_ENV === 'development') {
         sendErrorDev(err, res);
     } else {
-        let error = { ...err };
+        // Preserve the error name and other prototype properties
+        let error = Object.assign(Object.create(Object.getPrototypeOf(err)), err);
         error.message = err.message;
+        error.name = err.name;
 
-        if (error.name === 'CastError') error = handleCastErrorDB(error);
-        if (error.code === 11000) error = handleDuplicateFieldsDB(error);
-        if (error.name === 'ValidationError') error = handleValidationErrorDB(error);
-        if (error.name === 'JsonWebTokenError') error = new AppError('Invalid token. Please log in again!', 401);
-        if (error.name === 'TokenExpiredError') error = new AppError('Your token has expired! Please log in again.', 401);
+        if (err.name === 'CastError') error = handleCastErrorDB(err);
+        if (err.code === 11000) error = handleDuplicateFieldsDB(err);
+        if (err.name === 'ValidationError') error = handleValidationErrorDB(err);
+        if (err.name === 'JsonWebTokenError') error = new AppError('Invalid token. Please log in again!', 401);
+        if (err.name === 'TokenExpiredError') error = new AppError('Your token has expired! Please log in again.', 401);
 
         sendErrorProd(error, res);
     }

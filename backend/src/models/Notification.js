@@ -22,5 +22,9 @@ const notificationSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// Indexes for performance
+notificationSchema.index({ user: 1, createdAt: -1 });
+notificationSchema.index({ user: 1, isRead: 1 });
+
 const Notification = mongoose.model('Notification', notificationSchema);
 module.exports = Notification;

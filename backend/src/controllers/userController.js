@@ -39,7 +39,7 @@ exports.getUser = catchAsync(async (req, res, next) => {
 });
 
 exports.updateUser = catchAsync(async (req, res, next) => {
-    const { role, manager, isActive } = req.body;
+    const { role, manager, status } = req.body;
 
     if (req.body.password) {
         return next(new AppError('This route is not for password updates. Please use the reset password feature.', 400));
@@ -52,7 +52,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 
     if (role !== undefined) user.role = role;
     if (manager !== undefined) user.manager = manager;
-    if (isActive !== undefined) user.isActive = isActive;
+    if (status !== undefined) user.status = status;
 
     await user.save();
 
@@ -81,7 +81,7 @@ exports.deactivateUser = catchAsync(async (req, res, next) => {
         return next(new AppError('You cannot deactivate your own account. Please contact another administrator.', 400));
     }
 
-    user.isActive = false;
+    user.status = 'inactive';
     await user.save();
 
     await createActivity(
@@ -106,7 +106,7 @@ exports.activateUser = catchAsync(async (req, res, next) => {
         return next(new AppError('User not found. Please verify the user ID and try again.', 404));
     }
 
-    user.isActive = true;
+    user.status = 'active';
     await user.save();
 
     await createActivity(

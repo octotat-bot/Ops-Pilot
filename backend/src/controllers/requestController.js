@@ -23,6 +23,11 @@ exports.createRequest = catchAsync(async (req, res, next) => {
         status: 'pending'
     });
 
+    // Validate approval flow exists
+    if (!template.approvalFlow || template.approvalFlow.length === 0) {
+        return next(new AppError('Template has no approval flow configured. Please contact an administrator.', 400));
+    }
+
     const sortedFlow = template.approvalFlow.sort((a, b) => a.stageOrder - b.stageOrder);
     const firstFlowStep = sortedFlow[0];
 
@@ -85,13 +90,11 @@ exports.createRequest = catchAsync(async (req, res, next) => {
         if (assignedUserId) {
             const delegation = await getActiveDelegation(assignedUserId, templateId);
             if (delegation) {
-                
-                const originalAssignee = assignedUserId;
                 assignedUserId = delegation.delegate._id;
 
                 await createActivity(
                     'request_delegated',
-                    `Request auto - assigned to ${delegation.delegate.name} (delegated from original approver)`,
+                    `Request auto-assigned to ${delegation.delegate.name} (delegated from original approver)`,
                     { user: req.user._id, request: newRequest._id }
                 );
             }
@@ -158,12 +161,17 @@ exports.searchRequests = catchAsync(async (req, res, next) => {
 
     const searchTerm = q.trim();
 
-    const searchQuery = {
-        $or: [
-            { _id: searchTerm.match(/^[0-9a-fA-F]{24}$/) ? searchTerm : null }, 
-            { status: new RegExp(searchTerm, 'i') } 
-        ]
-    };
+    // Build search query - only include _id search if it's a valid ObjectId
+    const searchConditions = [
+        { status: new RegExp(searchTerm, 'i') }
+    ];
+    
+    // Only search by _id if the search term is a valid ObjectId format
+    if (searchTerm.match(/^[0-9a-fA-F]{24}$/)) {
+        searchConditions.push({ _id: searchTerm });
+    }
+
+    const searchQuery = { $or: searchConditions };
 
     let requests = await Request.find(searchQuery)
         .populate('template', 'title')

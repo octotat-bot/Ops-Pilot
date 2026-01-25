@@ -24,14 +24,19 @@ const createSendToken = (user, statusCode, res) => {
 };
 
 exports.signup = catchAsync(async (req, res, next) => {
+    const { name, email, password, passwordConfirm } = req.body;
 
+    // Validate password confirmation
+    if (!passwordConfirm || password !== passwordConfirm) {
+        return next(new AppError('Passwords do not match', 400));
+    }
+
+    // Security: Users always sign up as employees. Admins can change roles later.
     const newUser = await User.create({
-        name: req.body.name,
-        email: req.body.email,
-        password: req.body.password,
-        role: req.body.role,
-
-        manager: req.body.manager
+        name,
+        email,
+        password,
+        role: 'employee' // Force employee role on signup for security
     });
 
     createSendToken(newUser, 201, res);

@@ -46,7 +46,7 @@ const RequestDetails = () => {
     if (loading) return <div className="p-8">Loading details...</div>;
     if (error) return <div className="p-8 text-danger">Error: {error}</div>;
 
-    const { request, stages, analysis } = data;
+    const { request, stages } = data;
 
     const canApprove = (stage) => {
         if (stage.status !== 'pending') return false;
@@ -106,7 +106,14 @@ const RequestDetails = () => {
                     <div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-semibold text-text-primary">Request #{request._id.slice(-6)}</h1>
-                            <span className={clsx("badge", `bg-${request.status === 'approved' ? 'success' : 'brand-primary'}/10 text-${request.status === 'approved' ? 'success' : 'brand-primary'}`)}>
+                            <span className={clsx(
+                                "badge",
+                                request.status === 'approved' && "bg-emerald-100 text-emerald-700",
+                                request.status === 'rejected' && "bg-red-100 text-red-700",
+                                request.status === 'pending' && "bg-blue-100 text-blue-700",
+                                request.status === 'escalated' && "bg-orange-100 text-orange-700",
+                                request.status === 'overdue' && "bg-yellow-100 text-yellow-700"
+                            )}>
                                 {request.status.replace('_', ' ')}
                             </span>
                         </div>

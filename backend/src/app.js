@@ -1,6 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
+const helmet = require('helmet');
 
 const AppError = require('./utils/AppError');
 const globalErrorHandler = require('./middleware/errorController');
@@ -41,11 +42,15 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Security HTTP headers
+app.use(helmet());
+
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 }
 
-app.use(express.json());
+// Body parser, reading data from body into req.body
+app.use(express.json({ limit: '10kb' }));
 
 // Health Check
 app.get('/', (req, res) => {

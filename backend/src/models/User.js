@@ -28,15 +28,9 @@ const userSchema = new mongoose.Schema({
         enum: ['active', 'inactive'],
         default: 'active'
     },
-
     manager: {
         type: mongoose.Schema.ObjectId,
         ref: 'User'
-    },
-    active: {
-        type: Boolean,
-        default: true,
-        select: false
     }
 }, { timestamps: true });
 

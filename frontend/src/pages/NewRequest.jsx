@@ -15,6 +15,8 @@ const NewRequest = () => {
     const [isClone, setIsClone] = useState(false);
     const [originalRequestId, setOriginalRequestId] = useState(null);
 
+    const [cloneData, setCloneData] = useState(null);
+
     useEffect(() => {
         const fetchTemplates = async () => {
             try {
@@ -23,15 +25,14 @@ const NewRequest = () => {
 
                 const cloneDataStr = sessionStorage.getItem('cloneRequestData');
                 if (cloneDataStr) {
-                    const cloneData = JSON.parse(cloneDataStr);
-                    setIsClone(cloneData.isClone);
-                    setOriginalRequestId(cloneData.originalRequestId);
+                    const parsedCloneData = JSON.parse(cloneDataStr);
+                    setIsClone(parsedCloneData.isClone);
+                    setOriginalRequestId(parsedCloneData.originalRequestId);
 
-                    const template = res.data.data.templates.find(t => t._id === cloneData.templateId);
+                    const template = res.data.data.templates.find(t => t._id === parsedCloneData.templateId);
                     if (template) {
                         setSelectedTemplate(template);
-                        
-                        formik.setValues(cloneData.formData);
+                        setCloneData(parsedCloneData.formData);
                     }
 
                     sessionStorage.removeItem('cloneRequestData');
@@ -69,17 +70,14 @@ const NewRequest = () => {
 
     useEffect(() => {
         if (selectedTemplate) {
-            const shape = {};
             const initialVals = {};
             selectedTemplate.formSchema.fields.forEach(field => {
-                if (field.required) {
-                    shape[field.name] = Yup.string().required(`${field.label} is required`);
-                }
-                initialVals[field.name] = '';
+                // Use clone data if available, otherwise empty string
+                initialVals[field.name] = cloneData?.[field.name] || '';
             });
             formik.setValues(initialVals);
         }
-    }, [selectedTemplate]);
+    }, [selectedTemplate, cloneData]);
 
     if (loading) return <div>Loading templates...</div>;
 

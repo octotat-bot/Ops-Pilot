@@ -79,13 +79,7 @@ exports.approveStage = catchAsync(async (req, res, next) => {
         });
 
         request.currentStageIndex = nextStageIndex;
-
-        if (request.status === 'overdue') {
-
-            request.status = 'pending';
-        } else {
-            request.status = 'pending';
-        }
+        request.status = 'pending'; // Reset to pending for the next stage
         await request.save();
 
         if (nextAssignedUser) {
