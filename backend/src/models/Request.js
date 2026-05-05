@@ -38,13 +38,13 @@ const requestSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Calculate SLA deadline before saving
-requestSchema.pre('save', function(next) {
+// Using async style — Mongoose 7+ does not reliably pass `next` in callback-style hooks
+requestSchema.pre('save', async function() {
     if (this.isNew && this.templateSnapshot?.slaHours) {
         const deadline = new Date(this.createdAt || Date.now());
         deadline.setHours(deadline.getHours() + this.templateSnapshot.slaHours);
         this.slaDeadline = deadline;
     }
-    next();
 });
 
 // Add indexes for frequently queried fields
