@@ -2,12 +2,14 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
-import { Check, X, Clock, ShieldAlert, Filter, ArrowUpDown, CheckSquare, Square } from 'lucide-react';
+import { Check, X, Clock, ShieldAlert, CheckSquare, Square } from 'lucide-react';
 import { format } from 'date-fns';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../context/ToastContext';
 
 const Approvals = () => {
     const { user } = useAuth();
+    const toast = useToast();
     const [approvals, setApprovals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [dialog, setDialog] = useState({
@@ -174,7 +176,7 @@ const Approvals = () => {
         }
 
         try {
-            
+            // Bulk action
             if (dialog.requestIds && dialog.requestIds.length > 0) {
                 const promises = dialog.requestIds.map(reqId =>
                     api.patch(`/requests/${reqId}/${dialog.action}`, {
@@ -183,22 +185,27 @@ const Approvals = () => {
                 );
 
                 await Promise.all(promises);
-
                 setApprovals(prev => prev.filter(p => !dialog.requestIds.includes(p.request._id)));
                 setSelectedIds(new Set());
                 setDialog({ ...dialog, isOpen: false });
+
+                const actionLabel = dialog.action === 'approve' ? 'approved' : 'rejected';
+                toast.success(`${dialog.requestIds.length} request${dialog.requestIds.length > 1 ? 's' : ''} ${actionLabel} successfully.`);
             }
-            
+            // Single action
             else {
                 await api.patch(`/requests/${dialog.requestId}/${dialog.action}`, {
                     comments: comment || `Quick ${dialog.action} via dashboard`
                 });
                 setApprovals(prev => prev.filter(p => p.request._id !== dialog.requestId));
                 setDialog({ ...dialog, isOpen: false });
+
+                const actionLabel = dialog.action === 'approve' ? 'approved' : dialog.action === 'reject' ? 'rejected' : 'escalated';
+                toast.success(`Request ${actionLabel} successfully.`);
             }
         } catch (err) {
             fetchApprovals();
-
+            toast.error(err.response?.data?.message || 'Action failed. Please try again.');
             setDialog({
                 ...dialog,
                 type: 'danger',
@@ -209,7 +216,7 @@ const Approvals = () => {
                 confirmText: 'Close',
                 cancelText: null
             });
-            console.error("Action error", err);
+            console.error('Action error', err);
         }
     };
 
@@ -280,7 +287,9 @@ const Approvals = () => {
 
             <div className="space-y-4">
                 {loading ? (
-                    <div className="p-8 text-center text-text-muted">Loading...</div>
+                    <div className="space-y-4 animate-pulse">
+                        {[1,2,3].map(i => <div key={i} className="h-24 bg-white border border-[#eef2f1] rounded-xl"></div>)}
+                    </div>
                 ) : filteredApprovals.length === 0 ? (
                     <div className="card p-12 text-center">
                         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-success/10 mb-4 text-success">

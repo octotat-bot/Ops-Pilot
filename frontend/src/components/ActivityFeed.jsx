@@ -56,8 +56,20 @@ const ActivityFeed = ({ limit = 10 }) => {
     if (loading) {
         return (
             <div className="card p-6">
-                <h3 className="text-lg font-semibold text-text-primary mb-4">Recent Activity</h3>
-                <div className="text-center text-text-muted py-8">Loading...</div>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="h-5 bg-gray-200 rounded w-36 animate-pulse"></div>
+                </div>
+                <div className="space-y-3">
+                    {[1,2,3,4,5].map(i => (
+                        <div key={i} className="flex items-start gap-3 p-3 animate-pulse">
+                            <div className="w-4 h-4 bg-gray-200 rounded-full mt-0.5 flex-shrink-0"></div>
+                            <div className="flex-1 space-y-1.5">
+                                <div className="h-3.5 bg-gray-200 rounded w-3/4"></div>
+                                <div className="h-3 bg-gray-100 rounded w-24"></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }

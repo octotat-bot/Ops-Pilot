@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import api from '../utils/api';
 import { History, RotateCcw, X, User, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '../context/ToastContext';
 
 const TemplateVersionHistory = ({ template, onClose, onRevert }) => {
+    const toast = useToast();
     const [versions, setVersions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [revertDialog, setRevertDialog] = useState({ isOpen: false, version: null, reason: '' });
@@ -25,7 +27,7 @@ const TemplateVersionHistory = ({ template, onClose, onRevert }) => {
 
     const handleRevert = async () => {
         if (!revertDialog.reason.trim()) {
-            alert('Please provide a reason for reverting');
+            toast.error('Please provide a reason for reverting');
             return;
         }
 
@@ -33,12 +35,12 @@ const TemplateVersionHistory = ({ template, onClose, onRevert }) => {
             await api.post(`/templates/${template._id}/revert/${revertDialog.version.versionNumber}`, {
                 changeDescription: revertDialog.reason
             });
-            alert('Template reverted successfully!');
+            toast.success('Template reverted successfully!');
             setRevertDialog({ isOpen: false, version: null, reason: '' });
             onRevert();
             onClose();
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to revert template');
+            toast.error(err.response?.data?.message || 'Failed to revert template');
         }
     };
 
@@ -62,7 +64,17 @@ const TemplateVersionHistory = ({ template, onClose, onRevert }) => {
                 {}
                 <div className="flex-1 overflow-y-auto p-6">
                     {loading ? (
-                        <div className="text-center py-8 text-text-muted">Loading versions...</div>
+                        <div className="space-y-3 animate-pulse">
+                            {[1,2,3].map(i => (
+                                <div key={i} className="p-4 border border-border-light rounded-lg">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="h-6 bg-gray-200 rounded-full w-12"></div>
+                                    </div>
+                                    <div className="h-3 bg-gray-100 rounded w-48 mb-2"></div>
+                                    <div className="h-3 bg-gray-100 rounded w-64"></div>
+                                </div>
+                            ))}
+                        </div>
                     ) : versions.length === 0 ? (
                         <div className="text-center py-8 text-text-muted">
                             <History size={32} className="mx-auto mb-2 opacity-50" />

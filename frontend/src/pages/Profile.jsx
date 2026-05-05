@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
-    User, Mail, Briefcase, Shield, Clock, Calendar, Award,
-    TrendingUp, CheckCircle2, FileText, Activity, Edit2,
-    Save, X, Camera, MapPin, Phone, Globe
+    User, Mail, Briefcase, Shield, Calendar, Award,
+    CheckCircle2, Activity, Edit2,
+    Save, X, Camera, MapPin, Phone, Globe, Loader2
 } from 'lucide-react';
 import api from '../utils/api';
+import { useToast } from '../context/ToastContext';
 
 const Profile = () => {
     const { user } = useAuth();
+    const toast = useToast();
     const [isEditing, setIsEditing] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [statsLoading, setStatsLoading] = useState(true);
     const [stats, setStats] = useState({ requests: 0, approvals: 0, pending: 0 });
+    // Persist phone/location in localStorage since backend doesn't have these fields yet
     const [editData, setEditData] = useState({
         name: user?.name || '',
         department: user?.department || '',
-        phone: '',
-        location: ''
+        phone: localStorage.getItem(`profile_phone_${user?._id}`) || '',
+        location: localStorage.getItem(`profile_location_${user?._id}`) || ''
     });
 
     useEffect(() => {
@@ -23,14 +28,16 @@ const Profile = () => {
     }, []);
 
     const fetchUserStats = async () => {
+        setStatsLoading(true);
         try {
+            // Fixed: was /requests/my-requests (404) → correct endpoint is /requests/me
             const [requestsRes, approvalsRes] = await Promise.all([
-                api.get('/requests/my-requests'),
+                api.get('/requests/me'),
                 api.get('/requests/approvals')
             ]);
 
             const requests = requestsRes.data.data.requests || [];
-            const approvals = approvalsRes.data.data.requests || [];
+            const approvals = approvalsRes.data.data.approvals || [];
 
             setStats({
                 requests: requests.length,
@@ -39,13 +46,31 @@ const Profile = () => {
             });
         } catch (err) {
             console.error('Failed to fetch stats', err);
+        } finally {
+            setStatsLoading(false);
         }
     };
 
     const handleSave = async () => {
-
-        console.log('Saving profile:', editData);
-        setIsEditing(false);
+        setSaving(true);
+        try {
+            // Save phone/location to localStorage (these are local-only fields)
+            if (user?._id) {
+                localStorage.setItem(`profile_phone_${user._id}`, editData.phone);
+                localStorage.setItem(`profile_location_${user._id}`, editData.location);
+            }
+            // Save name/department to backend
+            await api.patch(`/users/${user._id}`, {
+                name: editData.name,
+                department: editData.department
+            });
+            toast.success('Profile updated successfully!');
+            setIsEditing(false);
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to save profile. Please try again.');
+        } finally {
+            setSaving(false);
+        }
     };
 
     const joinDate = new Date(user?.createdAt || Date.now()).toLocaleDateString('en-US', {
@@ -93,10 +118,11 @@ const Profile = () => {
                         </button>
                         <button
                             onClick={handleSave}
-                            className="btn btn-primary flex items-center gap-2"
+                            disabled={saving}
+                            className="btn btn-primary flex items-center gap-2 disabled:opacity-60"
                         >
-                            <Save size={16} />
-                            Save Changes
+                            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                            {saving ? 'Saving...' : 'Save Changes'}
                         </button>
                     </div>
                 )}
@@ -144,7 +170,7 @@ const Profile = () => {
                                     <h2 className="text-2xl font-bold text-text-primary mb-2">{user?.name}</h2>
                                 )}
 
-                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${roleBadge.color} text-white text-sm font-semibold shadow-lg mb-4">
+                                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${roleBadge.color} text-white text-sm font-semibold shadow-lg mb-4`}>
                                     <RoleIcon size={16} />
                                     {roleBadge.label}
                                 </div>
@@ -153,18 +179,29 @@ const Profile = () => {
 
                                 { }
                                 <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border-light">
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold text-brand-primary">{stats.requests}</div>
-                                        <div className="text-xs text-text-muted mt-1">Requests</div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold text-emerald-600">{stats.approvals}</div>
-                                        <div className="text-xs text-text-muted mt-1">Approvals</div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-                                        <div className="text-xs text-text-muted mt-1">Pending</div>
-                                    </div>
+                                    {statsLoading ? (
+                                        [1,2,3].map(i => (
+                                            <div key={i} className="text-center animate-pulse">
+                                                <div className="h-7 bg-gray-200 rounded w-10 mx-auto mb-1"></div>
+                                                <div className="h-3 bg-gray-100 rounded w-14 mx-auto"></div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <>
+                                            <div className="text-center">
+                                                <div className="text-2xl font-bold text-brand-primary">{stats.requests}</div>
+                                                <div className="text-xs text-text-muted mt-1">Requests</div>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-2xl font-bold text-emerald-600">{stats.approvals}</div>
+                                                <div className="text-xs text-text-muted mt-1">Approvals</div>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+                                                <div className="text-xs text-text-muted mt-1">Pending</div>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>

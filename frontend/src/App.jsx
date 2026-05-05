@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
 import DashboardLayout from './components/DashboardLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -26,31 +27,34 @@ const App = () => {
     <ToastProvider>
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/login" element={<Login />} />
 
-            <Route path="/" element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="my-requests" element={<MyRequests />} />
-              <Route path="requests/:id" element={<RequestDetails />} />
-              <Route path="approvals" element={<Approvals />} />
-              <Route path="requests/new" element={<NewRequest />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="advanced-analytics" element={<AdvancedAnalytics />} />
-              <Route path="delegations" element={<Delegations />} />
-              <Route path="templates" element={<AdminTemplates />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="global-requests" element={<AdminRequests />} />
-              <Route path="profile" element={<Profile />} />
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="my-requests" element={<MyRequests />} />
+                {/* IMPORTANT: /requests/new MUST come before /requests/:id */}
+                <Route path="requests/new" element={<NewRequest />} />
+                <Route path="requests/:id" element={<RequestDetails />} />
+                <Route path="approvals" element={<Approvals />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="advanced-analytics" element={<AdvancedAnalytics />} />
+                <Route path="delegations" element={<Delegations />} />
+                <Route path="templates" element={<AdminTemplates />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="global-requests" element={<AdminRequests />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Route>
               <Route path="*" element={<Navigate to="/login" replace />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
+            </Routes>
+          </ErrorBoundary>
         </AuthProvider>
       </BrowserRouter>
     </ToastProvider>
@@ -58,4 +62,3 @@ const App = () => {
 };
 
 export default App;
-

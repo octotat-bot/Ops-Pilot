@@ -21,12 +21,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-
         if (error.response && error.response.status === 401) {
-
+            // Clear stale session and redirect to login
             sessionStorage.removeItem('token');
             sessionStorage.removeItem('user');
-
+            // Only redirect if not already on login page
+            if (!window.location.pathname.includes('/login')) {
+                window.location.href = '/login';
+            }
         }
         return Promise.reject(error);
     }

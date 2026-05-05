@@ -1,50 +1,74 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { format } from 'date-fns';
-import { CheckCircle, XCircle, Clock, AlertTriangle, ArrowLeft, Copy } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertTriangle, ArrowLeft, Copy, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../context/ToastContext';
 
 const RequestDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const toast = useToast();
 
-    const [data, setData] = useState(null); 
+    const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [actionDialog, setActionDialog] = useState({ isOpen: false, type: '', title: '', message: '' });
 
-    useEffect(() => {
-        const fetchDetails = async () => {
-            try {
-                const res = await api.get(`/requests/${id}`);
-                setData(res.data.data);
-            } catch (err) {
-                setError(err.response?.data?.message || 'Failed to load request');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchDetails();
+    const fetchDetails = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await api.get(`/requests/${id}`);
+            setData(res.data.data);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to load request');
+        } finally {
+            setLoading(false);
+        }
     }, [id]);
 
+    useEffect(() => {
+        fetchDetails();
+    }, [fetchDetails]);
+
     const handleCloneRequest = () => {
-        
-        const cloneData = {
+        if (!data?.request) return;
+        const { request } = data;
+        const clonePayload = {
             templateId: request.template._id,
             formData: request.formData,
             isClone: true,
             originalRequestId: request._id
         };
-        sessionStorage.setItem('cloneRequestData', JSON.stringify(cloneData));
+        sessionStorage.setItem('cloneRequestData', JSON.stringify(clonePayload));
         navigate('/requests/new');
     };
 
-    if (loading) return <div className="p-8">Loading details...</div>;
-    if (error) return <div className="p-8 text-danger">Error: {error}</div>;
+    if (loading) return (
+        <div className="space-y-6 animate-pulse">
+            <div className="flex items-center gap-4">
+                <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                <div className="h-8 bg-gray-200 rounded w-48"></div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 h-64 bg-gray-200 rounded-xl"></div>
+                <div className="h-64 bg-gray-200 rounded-xl"></div>
+            </div>
+        </div>
+    );
+    if (error) return (
+        <div className="p-8 text-center">
+            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <AlertTriangle size={24} />
+            </div>
+            <p className="text-danger font-semibold mb-4">{error}</p>
+            <button onClick={() => navigate(-1)} className="btn btn-secondary">Go Back</button>
+        </div>
+    );
 
     const { request, stages } = data;
 
@@ -89,9 +113,13 @@ const RequestDetails = () => {
             await api.patch(`/requests/${request._id}/${action}`, {
                 comments: comment
             });
-            window.location.reload();
+            const actionLabel = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'escalated';
+            toast.success(`Request ${actionLabel} successfully.`);
+            setActionDialog({ ...actionDialog, isOpen: false });
+            fetchDetails(); // Re-fetch instead of full page reload
         } catch (err) {
-            console.error("Action failed", err);
+            toast.error(err.response?.data?.message || 'Action failed. Please try again.');
+            console.error('Action failed', err);
         }
     };
 

@@ -4,9 +4,11 @@ import api from '../utils/api';
 import { Calendar, Users, X, Plus, UserCheck, UserX } from 'lucide-react';
 import { format } from 'date-fns';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../context/ToastContext';
 
 const Delegations = () => {
     const { user } = useAuth();
+    const toast = useToast();
     const [myDelegations, setMyDelegations] = useState([]);
     const [delegationsToMe, setDelegationsToMe] = useState([]);
     const [users, setUsers] = useState([]);
@@ -52,17 +54,11 @@ const Delegations = () => {
         try {
             await api.post('/delegations', formData);
             setCreateModalOpen(false);
-            setFormData({
-                delegate: '',
-                startDate: '',
-                endDate: '',
-                reason: '',
-                scope: 'all',
-                templates: []
-            });
+            setFormData({ delegate: '', startDate: '', endDate: '', reason: '', scope: 'all', templates: [] });
             fetchData();
+            toast.success('Delegation created successfully!');
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to create delegation');
+            toast.error(err.response?.data?.message || 'Failed to create delegation');
         }
     };
 
@@ -71,8 +67,9 @@ const Delegations = () => {
             await api.patch(`/delegations/${confirmDialog.delegationId}/deactivate`);
             setConfirmDialog({ isOpen: false, delegationId: null });
             fetchData();
+            toast.success('Delegation deactivated.');
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to deactivate delegation');
+            toast.error(err.response?.data?.message || 'Failed to deactivate delegation');
         }
     };
 
@@ -83,7 +80,16 @@ const Delegations = () => {
         return delegation.isActive && start <= now && end >= now;
     };
 
-    if (loading) return <div className="p-8">Loading...</div>;
+    if (loading) return (
+        <div className="space-y-6 animate-pulse">
+            <div className="flex items-center justify-between">
+                <div className="h-8 bg-gray-200 rounded w-40"></div>
+                <div className="h-9 bg-gray-200 rounded w-36"></div>
+            </div>
+            <div className="card p-6"><div className="h-4 bg-gray-200 rounded w-32 mb-4"></div><div className="h-24 bg-gray-100 rounded-lg"></div></div>
+            <div className="card p-6"><div className="h-4 bg-gray-200 rounded w-40 mb-4"></div><div className="h-24 bg-gray-100 rounded-lg"></div></div>
+        </div>
+    );
 
     if (user?.role !== 'manager') {
         return (

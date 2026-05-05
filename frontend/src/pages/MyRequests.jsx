@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, FileText, ArrowRight, Download, Copy } from 'lucide-react';
 import clsx from 'clsx';
 import { format } from 'date-fns';
+import { useToast } from '../context/ToastContext';
 
 const StatusBadge = ({ status, isSlaBreached }) => {
     const getStatusStyle = () => {
@@ -32,6 +33,7 @@ const MyRequests = () => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const toast = useToast();
 
     const [filters, setFilters] = useState({
         status: 'all',
@@ -46,6 +48,7 @@ const MyRequests = () => {
                 setRequests(res.data.data.requests);
             } catch (err) {
                 console.error(err);
+                toast.error('Failed to load your requests. Please refresh.');
             } finally {
                 setLoading(false);
             }
@@ -190,7 +193,30 @@ const MyRequests = () => {
 
             <div className="card overflow-hidden">
                 {loading ? (
-                    <div className="p-8 text-center text-text-muted">Loading...</div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-border-light bg-bg-subtle text-xs font-semibold uppercase text-text-muted tracking-wide">
+                                    <th className="py-3 px-4 w-24">ID</th>
+                                    <th className="py-3 px-4">Template</th>
+                                    <th className="py-3 px-4">Status</th>
+                                    <th className="py-3 px-4">Submitted On</th>
+                                    <th className="py-3 px-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border-light">
+                                {[1,2,3,4,5].map(i => (
+                                    <tr key={i} className="animate-pulse">
+                                        <td className="py-3 px-4"><div className="h-4 bg-gray-200 rounded w-16"></div></td>
+                                        <td className="py-3 px-4"><div className="h-4 bg-gray-200 rounded w-40"></div></td>
+                                        <td className="py-3 px-4"><div className="h-5 bg-gray-200 rounded w-20"></div></td>
+                                        <td className="py-3 px-4"><div className="h-4 bg-gray-200 rounded w-28"></div></td>
+                                        <td className="py-3 px-4"><div className="h-4 bg-gray-200 rounded w-20 ml-auto"></div></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 ) : filteredRequests.length === 0 ? (
                     <div className="p-12 text-center">
                         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-bg-subtle mb-4 text-text-muted">

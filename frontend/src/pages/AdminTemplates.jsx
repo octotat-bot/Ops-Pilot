@@ -8,11 +8,13 @@ import {
     CheckCircle2, X, Search, Filter
 } from 'lucide-react';
 import TemplateVersionHistory from '../components/TemplateVersionHistory';
+import { useToast } from '../context/ToastContext';
 
 const AdminTemplates = () => {
     const [templates, setTemplates] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchParams, setSearchParams] = useSearchParams();
+    const toast = useToast();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
@@ -72,7 +74,6 @@ const AdminTemplates = () => {
 
     const publishNewTemplate = async () => {
         if (!newlyCreatedTemplate) return;
-
         try {
             await api.patch(`/templates/${newlyCreatedTemplate._id}`, {
                 isPublished: true,
@@ -81,8 +82,9 @@ const AdminTemplates = () => {
             setPublishDialogOpen(false);
             setNewlyCreatedTemplate(null);
             fetchTemplates();
+            toast.success('Template published successfully!');
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to publish template');
+            toast.error(err.response?.data?.message || 'Failed to publish template');
         }
     };
 
@@ -93,14 +95,14 @@ const AdminTemplates = () => {
 
     const confirmDeleteTemplate = async () => {
         if (!templateToDelete) return;
-
         try {
             await api.delete(`/templates/${templateToDelete}`);
             fetchTemplates();
             setDeleteDialogOpen(false);
             setTemplateToDelete(null);
+            toast.success('Template deleted.');
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to delete template');
+            toast.error(err.response?.data?.message || 'Failed to delete template');
         }
     };
 
@@ -147,6 +149,7 @@ const AdminTemplates = () => {
                     ...payload,
                     changeDescription: 'Updated by admin'
                 });
+                toast.success('Template updated successfully!');
             } else {
                 // Create
                 const response = await api.post('/templates', payload);
@@ -168,8 +171,8 @@ const AdminTemplates = () => {
             });
             fetchTemplates();
         } catch (err) {
-            console.error("Failed to save template", err);
-            alert(err.response?.data?.message || 'Failed to save template');
+            console.error('Failed to save template', err);
+            toast.error(err.response?.data?.message || 'Failed to save template');
         }
     };
 

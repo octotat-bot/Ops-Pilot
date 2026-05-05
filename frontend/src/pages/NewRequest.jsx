@@ -3,18 +3,20 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Copy, FileText } from 'lucide-react';
+import { ArrowLeft, Send, Copy, FileText, Loader2 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../context/ToastContext';
 
 const NewRequest = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const [templates, setTemplates] = useState([]);
     const [selectedTemplate, setSelectedTemplate] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [dialog, setDialog] = useState({ isOpen: false, type: 'info', title: '', message: '' });
     const [isClone, setIsClone] = useState(false);
     const [originalRequestId, setOriginalRequestId] = useState(null);
-
     const [cloneData, setCloneData] = useState(null);
 
     useEffect(() => {
@@ -38,7 +40,8 @@ const NewRequest = () => {
                     sessionStorage.removeItem('cloneRequestData');
                 }
             } catch (err) {
-                console.error("Failed to load templates");
+                console.error('Failed to load templates');
+                toast.error('Failed to load templates. Please try again.');
             } finally {
                 setLoading(false);
             }
@@ -46,24 +49,53 @@ const NewRequest = () => {
         fetchTemplates();
     }, []);
 
+    // Dynamically build Yup schema from template fields
+    const buildValidationSchema = (fields) => {
+        const shape = {};
+        fields.forEach(field => {
+            let validator = Yup.string();
+            if (field.required) {
+                validator = validator.required(`${field.label} is required`);
+            }
+            if (field.type === 'number') {
+                validator = Yup.number().typeError(`${field.label} must be a number`);
+                if (field.required) validator = validator.required(`${field.label} is required`);
+            }
+            if (field.type === 'email') {
+                validator = Yup.string().email(`${field.label} must be a valid email`);
+                if (field.required) validator = validator.required(`${field.label} is required`);
+            }
+            shape[field.name] = validator;
+        });
+        return Yup.object().shape(shape);
+    };
+
     const formik = useFormik({
         initialValues: {},
         enableReinitialize: true,
+        validationSchema: selectedTemplate
+            ? buildValidationSchema(selectedTemplate.formSchema.fields)
+            : Yup.object(),
         onSubmit: async (values) => {
+            setSubmitting(true);
             try {
                 await api.post('/requests', {
                     templateId: selectedTemplate._id,
                     formData: values,
                     status: 'submitted'
                 });
+                toast.success('Request submitted successfully!');
                 navigate('/my-requests');
             } catch (err) {
+                toast.error("Couldn't submit your request: " + (err.response?.data?.message || err.message));
                 setDialog({
                     isOpen: true,
                     type: 'danger',
                     title: 'Submission Failed',
                     message: "We couldn't submit your request: " + (err.response?.data?.message || err.message)
                 });
+            } finally {
+                setSubmitting(false);
             }
         }
     });
@@ -72,17 +104,26 @@ const NewRequest = () => {
         if (selectedTemplate) {
             const initialVals = {};
             selectedTemplate.formSchema.fields.forEach(field => {
-                // Use clone data if available, otherwise empty string
                 initialVals[field.name] = cloneData?.[field.name] || '';
             });
             formik.setValues(initialVals);
         }
     }, [selectedTemplate, cloneData]);
 
-    if (loading) return <div>Loading templates...</div>;
+    if (loading) {
+        return (
+            <div className="space-y-4 animate-pulse">
+                <div className="h-8 bg-gray-200 rounded w-48"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     if (!selectedTemplate) {
-        
         return (
             <div>
                 <div className="mb-6">
@@ -116,6 +157,9 @@ const NewRequest = () => {
                                 onClick={() => setSelectedTemplate(t)}
                                 className="card p-6 cursor-pointer hover:border-brand-primary hover:shadow-md transition-all group"
                             >
+                                <div className="w-10 h-10 bg-brand-primary/10 rounded-lg flex items-center justify-center mb-3 group-hover:bg-brand-primary/20 transition-colors">
+                                    <FileText size={20} className="text-brand-primary" />
+                                </div>
                                 <h3 className="text-lg font-semibold text-text-primary group-hover:text-brand-primary mb-2">{t.title}</h3>
                                 <p className="text-sm text-text-secondary">{t.description}</p>
                             </div>
@@ -123,7 +167,6 @@ const NewRequest = () => {
                     </div>
                 )}
 
-                {}
                 <ConfirmDialog
                     isOpen={dialog.isOpen}
                     onClose={() => setDialog({ ...dialog, isOpen: false })}
@@ -162,49 +205,64 @@ const NewRequest = () => {
                 </div>
 
                 <form onSubmit={formik.handleSubmit} className="space-y-6">
-                    {selectedTemplate.formSchema.fields.map((field) => (
-                        <div key={field.name}>
-                            <label className="block text-sm font-medium text-text-secondary mb-1">
-                                {field.label} {field.required && <span className="text-danger">*</span>}
-                            </label>
+                    {selectedTemplate.formSchema.fields.map((field) => {
+                        const touched = formik.touched[field.name];
+                        const error = formik.errors[field.name];
+                        return (
+                            <div key={field.name}>
+                                <label className="block text-sm font-medium text-text-secondary mb-1">
+                                    {field.label} {field.required && <span className="text-danger">*</span>}
+                                </label>
 
-                            {field.type === 'textarea' ? (
-                                <textarea
-                                    name={field.name}
-                                    className="input min-h-[100px]"
-                                    onChange={formik.handleChange}
-                                    value={formik.values[field.name] || ''}
-                                    placeholder={`Enter ${field.label.toLowerCase()}...`}
-                                />
-                            ) : field.type === 'select' ? (
-                                <select
-                                    name={field.name}
-                                    className="input"
-                                    onChange={formik.handleChange}
-                                    value={formik.values[field.name] || ''}
-                                >
-                                    <option value="">Select an option</option>
-                                    {field.options.map(opt => (
-                                        <option key={opt} value={opt}>{opt}</option>
-                                    ))}
-                                </select>
-                            ) : (
-                                <input
-                                    type={field.type}
-                                    name={field.name}
-                                    className="input"
-                                    onChange={formik.handleChange}
-                                    value={formik.values[field.name] || ''}
-                                    placeholder={`Enter ${field.label.toLowerCase()}`}
-                                />
-                            )}
-                        </div>
-                    ))}
+                                {field.type === 'textarea' ? (
+                                    <textarea
+                                        name={field.name}
+                                        className={`input min-h-[100px] ${touched && error ? 'border-red-400 focus:ring-red-200 focus:border-red-400' : ''}`}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        value={formik.values[field.name] || ''}
+                                        placeholder={`Enter ${field.label.toLowerCase()}...`}
+                                    />
+                                ) : field.type === 'select' ? (
+                                    <select
+                                        name={field.name}
+                                        className={`input ${touched && error ? 'border-red-400 focus:ring-red-200 focus:border-red-400' : ''}`}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        value={formik.values[field.name] || ''}
+                                    >
+                                        <option value="">Select an option</option>
+                                        {field.options?.map(opt => (
+                                            <option key={opt} value={opt}>{opt}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type={field.type}
+                                        name={field.name}
+                                        className={`input ${touched && error ? 'border-red-400 focus:ring-red-200 focus:border-red-400' : ''}`}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        value={formik.values[field.name] || ''}
+                                        placeholder={`Enter ${field.label.toLowerCase()}`}
+                                    />
+                                )}
+
+                                {touched && error && (
+                                    <p className="mt-1 text-xs text-red-600 font-medium">{error}</p>
+                                )}
+                            </div>
+                        );
+                    })}
 
                     <div className="pt-6 flex items-center justify-end gap-3">
                         <button type="button" onClick={() => setSelectedTemplate(null)} className="btn btn-ghost">Cancel</button>
-                        <button type="submit" className="btn btn-primary">
-                            <Send size={16} /> Submit Request
+                        <button type="submit" disabled={submitting} className="btn btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+                            {submitting ? (
+                                <><Loader2 size={16} className="animate-spin" /> Submitting...</>
+                            ) : (
+                                <><Send size={16} /> Submit Request</>
+                            )}
                         </button>
                     </div>
                 </form>

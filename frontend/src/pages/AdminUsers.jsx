@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../utils/api';
 import { Users, Shield, Briefcase, User as UserIcon, Edit, UserX, UserCheck, Key, X } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../context/ToastContext';
 
 const AdminUsers = () => {
     const [users, setUsers] = useState([]);
@@ -9,6 +10,7 @@ const AdminUsers = () => {
     const [editDialog, setEditDialog] = useState({ isOpen: false, user: null });
     const [passwordDialog, setPasswordDialog] = useState({ isOpen: false, user: null });
     const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, type: '', user: null });
+    const toast = useToast();
 
     useEffect(() => {
         fetchUsers();
@@ -36,8 +38,9 @@ const AdminUsers = () => {
             });
             await fetchUsers();
             setEditDialog({ isOpen: false, user: null });
+            toast.success(`${editDialog.user.name}'s role updated successfully.`);
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to update user');
+            toast.error(err.response?.data?.message || 'Failed to update user');
         }
     };
 
@@ -53,13 +56,15 @@ const AdminUsers = () => {
         try {
             if (confirmDialog.type === 'deactivate') {
                 await api.patch(`/users/${confirmDialog.user._id}/deactivate`);
+                toast.success(`${confirmDialog.user.name} has been deactivated.`);
             } else if (confirmDialog.type === 'activate') {
                 await api.patch(`/users/${confirmDialog.user._id}/activate`);
+                toast.success(`${confirmDialog.user.name} has been activated.`);
             }
             await fetchUsers();
             setConfirmDialog({ isOpen: false, type: '', user: null });
         } catch (err) {
-            alert(err.response?.data?.message || 'Action failed');
+            toast.error(err.response?.data?.message || 'Action failed');
         }
     };
 
@@ -69,7 +74,7 @@ const AdminUsers = () => {
 
     const handleSavePassword = async () => {
         if (!passwordDialog.newPassword || passwordDialog.newPassword.length < 8) {
-            alert('Password must be at least 8 characters long');
+            toast.error('Password must be at least 8 characters long');
             return;
         }
 
@@ -77,14 +82,22 @@ const AdminUsers = () => {
             await api.patch(`/users/${passwordDialog.user._id}/reset-password`, {
                 newPassword: passwordDialog.newPassword
             });
-            alert('Password reset successfully!');
+            toast.success('Password reset successfully!');
             setPasswordDialog({ isOpen: false, user: null, newPassword: '' });
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to reset password');
+            toast.error(err.response?.data?.message || 'Failed to reset password');
         }
     };
 
-    if (loading) return <div className="p-8">Loading users...</div>;
+    if (loading) return (
+        <div className="space-y-4 animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-48"></div>
+            <div className="card overflow-hidden">
+                <div className="h-10 bg-gray-100"></div>
+                {[1,2,3,4,5].map(i => <div key={i} className="h-14 border-t border-gray-100 bg-white"></div>)}
+            </div>
+        </div>
+    );
 
     return (
         <div>
