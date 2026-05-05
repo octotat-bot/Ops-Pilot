@@ -35,8 +35,16 @@ exports.createTemplate = catchAsync(async (req, res, next) => {
 
 exports.getAllTemplates = catchAsync(async (req, res, next) => {
     const filter = {};
-    if (req.user.role === 'employee' || req.user.role === 'manager') {
+
+    if (req.user.role === 'admin') {
+        // Admin sees all templates (published + drafts)
+    } else if (req.user.role === 'manager') {
         filter.isPublished = true;
+        filter.accessLevel = { $in: ['all', 'manager'] };
+    } else {
+        // employee
+        filter.isPublished = true;
+        filter.accessLevel = { $in: ['all', 'employee'] };
     }
 
     const templates = await Template.find(filter);

@@ -15,6 +15,22 @@ exports.createRequest = catchAsync(async (req, res, next) => {
         return next(new AppError('Template not found', 404));
     }
 
+    // Ensure template is published (employees/managers can't submit draft templates)
+    if (!template.isPublished && req.user.role !== 'admin') {
+        return next(new AppError('This template is not available for submissions.', 403));
+    }
+
+    // Enforce accessLevel — prevent API bypass by non-admin users
+    const role = req.user.role;
+    if (role === 'employee' && template.accessLevel === 'manager') {
+        return next(new AppError('You do not have permission to submit this type of request.', 403));
+    }
+
+    // Validate approval flow BEFORE creating the request (prevents orphaned records)
+    if (!template.approvalFlow || template.approvalFlow.length === 0) {
+        return next(new AppError('This template has no approval flow configured. Please contact an administrator.', 400));
+    }
+
     const newRequest = await Request.create({
         requester: req.user._id,
         template: templateId,
@@ -22,11 +38,6 @@ exports.createRequest = catchAsync(async (req, res, next) => {
         formData,
         status: 'pending'
     });
-
-    // Validate approval flow exists
-    if (!template.approvalFlow || template.approvalFlow.length === 0) {
-        return next(new AppError('Template has no approval flow configured. Please contact an administrator.', 400));
-    }
 
     const sortedFlow = template.approvalFlow.sort((a, b) => a.stageOrder - b.stageOrder);
     const firstFlowStep = sortedFlow[0];

@@ -81,8 +81,7 @@ const NewRequest = () => {
             try {
                 await api.post('/requests', {
                     templateId: selectedTemplate._id,
-                    formData: values,
-                    status: 'submitted'
+                    formData: values
                 });
                 toast.success('Request submitted successfully!');
                 navigate('/my-requests');
