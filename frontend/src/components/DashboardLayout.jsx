@@ -41,7 +41,7 @@ const SidebarItem = ({ to, icon: Icon, children, onClick }) => {
     );
 };
 
-const SidebarContent = ({ user, navigate, onLinkClick }) => (
+const SidebarContent = ({ user, navigate, logout, onLinkClick }) => (
     <>
         {/* Logo */}
         <div className="h-14 flex items-center px-5 border-b border-[#d9e1e0] bg-[#eef2f1] flex-shrink-0">
@@ -145,7 +145,7 @@ const DashboardLayout = () => {
 
             {/* Desktop Sidebar */}
             <aside className="hidden md:flex w-64 bg-[#eef2f1] border-r border-[#d9e1e0] flex-col h-full flex-shrink-0 relative z-20">
-                <SidebarContent user={user} navigate={navigate} />
+                <SidebarContent user={user} navigate={navigate} logout={logout} />
             </aside>
 
             {/* Mobile Sidebar Overlay */}
@@ -165,7 +165,7 @@ const DashboardLayout = () => {
                         >
                             <X size={18} />
                         </button>
-                        <SidebarContent user={user} navigate={navigate} onLinkClick={closeSidebar} />
+                        <SidebarContent user={user} navigate={navigate} logout={logout} onLinkClick={closeSidebar} />
                     </aside>
                 </div>
             )}
