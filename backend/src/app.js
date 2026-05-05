@@ -42,9 +42,13 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+// Explicitly handle preflight OPTIONS requests for all routes
+// This must come before Helmet so CORS headers are set first
+// Note: Express 5 requires regex — bare '*' is invalid in path-to-regexp v8
+app.options(/.*/, cors(corsOptions));
 
-// Security HTTP headers
-app.use(helmet());
+// Security HTTP headers — disable crossOriginResourcePolicy so CORS headers aren't stripped
+app.use(helmet({ crossOriginResourcePolicy: false }));
 
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
