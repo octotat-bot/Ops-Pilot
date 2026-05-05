@@ -3,7 +3,6 @@ const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize');
 
 const AppError = require('./utils/AppError');
 const globalErrorHandler = require('./middleware/errorController');
@@ -55,8 +54,25 @@ if (process.env.NODE_ENV === 'development') {
 app.use(express.json({ limit: '10kb' }));
 
 // Data sanitization against NoSQL injection attacks
-// Strips out MongoDB operators ($, .) from request body, params, query
-app.use(mongoSanitize());
+// Custom middleware: express-mongo-sanitize is incompatible with Express 5
+// because req.query is a read-only getter in Express 5.
+// We sanitize only req.body and req.params which are safe to mutate.
+const sanitizeValue = (obj) => {
+    if (obj === null || typeof obj !== 'object') return;
+    for (const key of Object.keys(obj)) {
+        if (key.startsWith('$') || key.includes('.')) {
+            delete obj[key];
+        } else {
+            sanitizeValue(obj[key]);
+        }
+    }
+};
+
+app.use((req, res, next) => {
+    if (req.body) sanitizeValue(req.body);
+    if (req.params) sanitizeValue(req.params);
+    next();
+});
 
 // Rate limiting - prevent brute-force on auth routes
 const authLimiter = rateLimit({
