@@ -144,18 +144,21 @@ exports.createRequest = catchAsync(async (req, res, next) => {
 });
 
 exports.getAllRequests = catchAsync(async (req, res, next) => {
-    
-    const requests = await Request.find()
+    const limit = parseInt(req.query.limit) || 0; // 0 = no limit
+
+    const query = Request.find()
         .populate('template', 'title')
         .populate('requester', 'name department')
         .sort('-createdAt');
 
+    if (limit > 0) query.limit(limit);
+
+    const requests = await query;
+
     res.status(200).json({
         status: 'success',
         results: requests.length,
-        data: {
-            requests
-        }
+        data: { requests }
     });
 });
 

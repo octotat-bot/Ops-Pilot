@@ -105,25 +105,25 @@ exports.getAnalytics = catchAsync(async (req, res, next) => {
         ? (approvedCount / processedCount) * 100
         : 0;
 
+    const totalUsers = await User.countDocuments();
+
     res.status(200).json({
         status: 'success',
         data: {
             analytics: {
-                period: {
-                    days: parseInt(days),
-                    from: daysAgo,
-                    to: new Date()
-                },
+                period: { days: parseInt(days), from: daysAgo, to: new Date() },
                 volumeByDate,
                 statusByDate,
-                avgApprovalTime: Math.round(avgApprovalTime * 10) / 10, 
+                avgApprovalTime: Math.round(avgApprovalTime * 10) / 10,
                 topRequesters,
                 templateUsage,
                 slaCompliance: Math.round(slaCompliance * 10) / 10,
                 statusDistribution,
                 approvalRate: Math.round(approvalRate * 10) / 10,
                 totalRequests,
-                slaBreached
+                totalUsers,
+                slaBreached,
+                slaBreachCount: slaBreached  // alias for admin dashboard
             }
         }
     });

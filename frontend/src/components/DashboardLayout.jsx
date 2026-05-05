@@ -77,10 +77,14 @@ const SidebarContent = ({ user, navigate, logout, onLinkClick }) => (
             <div className="mb-2">
                 <p className="text-[11px] font-bold text-text-muted uppercase tracking-wider mb-2 px-5">Menu</p>
                 <SidebarItem to="/dashboard" icon={LayoutDashboard} onClick={onLinkClick}>Dashboard</SidebarItem>
+                {/* Employees and managers can see their own requests */}
                 {user?.role !== 'admin' && (
                     <SidebarItem to="/my-requests" icon={FileText} onClick={onLinkClick}>My Requests</SidebarItem>
                 )}
-                <SidebarItem to="/approvals" icon={CheckSquare} onClick={onLinkClick}>Approvals</SidebarItem>
+                {/* Only managers and admins have requests to approve */}
+                {(user?.role === 'manager' || user?.role === 'admin') && (
+                    <SidebarItem to="/approvals" icon={CheckSquare} onClick={onLinkClick}>Approvals</SidebarItem>
+                )}
             </div>
 
             <div>
