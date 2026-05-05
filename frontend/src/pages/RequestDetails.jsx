@@ -16,6 +16,7 @@ const RequestDetails = () => {
 
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [actionDialog, setActionDialog] = useState({ isOpen: false, type: '', title: '', message: '' });
 
@@ -74,8 +75,9 @@ const RequestDetails = () => {
 
     const canApprove = (stage) => {
         if (stage.status !== 'pending') return false;
-        
-        return stage.assignedToUser?._id === user._id || user.role === 'admin';
+        // Use toString() to safely compare ObjectId objects with string IDs
+        const assignedId = stage.assignedToUser?._id?.toString() || stage.assignedToUser?.toString();
+        return assignedId === user._id?.toString() || user.role === 'admin';
     };
 
     const initiationAction = (action) => {
@@ -108,18 +110,20 @@ const RequestDetails = () => {
     };
 
     const handleConfirmAction = async (comment) => {
+        if (submitting) return; // prevent double-submit
+        setSubmitting(true);
         try {
             const action = actionDialog.action;
-            await api.patch(`/requests/${request._id}/${action}`, {
-                comments: comment
-            });
+            await api.patch(`/requests/${request._id}/${action}`, { comments: comment });
             const actionLabel = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'escalated';
             toast.success(`Request ${actionLabel} successfully.`);
             setActionDialog({ ...actionDialog, isOpen: false });
-            fetchDetails(); // Re-fetch instead of full page reload
+            fetchDetails();
         } catch (err) {
             toast.error(err.response?.data?.message || 'Action failed. Please try again.');
             console.error('Action failed', err);
+        } finally {
+            setSubmitting(false);
         }
     };
 

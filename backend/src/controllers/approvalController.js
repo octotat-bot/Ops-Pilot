@@ -55,12 +55,13 @@ exports.approveStage = catchAsync(async (req, res, next) => {
     currentStage.comments = comments;
     await currentStage.save();
 
-    const templateFn = request.template.approvalFlow.sort((a, b) => a.stageOrder - b.stageOrder);
+    // Use templateSnapshot for approval flow — more reliable than populating template
+    // (template could be deleted/updated after request was submitted)
+    const approvalFlow = (request.templateSnapshot?.approvalFlow || request.template?.approvalFlow || []).slice().sort((a, b) => a.stageOrder - b.stageOrder);
     const nextStageIndex = request.currentStageIndex + 1;
 
-    if (nextStageIndex < templateFn.length) {
-        
-        const nextFlowStep = templateFn[nextStageIndex];
+    if (nextStageIndex < approvalFlow.length) {
+        const nextFlowStep = approvalFlow[nextStageIndex];
         let nextAssignedUser = null;
 
         if (nextFlowStep.specificApprover) {
@@ -97,11 +98,11 @@ exports.approveStage = catchAsync(async (req, res, next) => {
         await request.save();
 
         await Notification.create({
-            user: request.requester._id || request.requester,
-            type: 'request_update',
-            message: `Your request for ${request.template.title} has been APPROVED!`,
-            referenceId: request._id
-        });
+                user: request.requester._id || request.requester,
+                type: 'request_update',
+                message: `Your request for ${request.templateSnapshot?.title || 'the request'} has been APPROVED!`,
+                referenceId: request._id
+            });
     }
 
     await createActivity(
