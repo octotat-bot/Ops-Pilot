@@ -193,5 +193,5 @@ Get insights into your operations:
 
 ## License
 
-Internal use only - All rights reserved
+MIT. See [LICENSE](LICENSE).
 
