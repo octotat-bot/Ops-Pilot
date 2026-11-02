@@ -6,7 +6,7 @@ A comprehensive workflow management system built to streamline internal operatio
 
 ## What is OpsPilot?
 
-OpsPilot is an enterprise-grade platform designed to handle the complexity of internal operations. Whether you're managing IT requests, HR approvals, or resource allocations, OpsPilot provides the tools you need to keep everything organized and moving forward.
+OpsPilot is a platform for handling internal operations. Whether you're managing IT requests, HR approvals, or resource allocations, OpsPilot provides the tools you need to keep everything organized and moving forward.
 
 ### Key Features
 
@@ -39,7 +39,7 @@ OpsPilot is an enterprise-grade platform designed to handle the complexity of in
 ## Project Structure
 
 ```
-ops/
+Ops-Pilot/
 ├── frontend/                 # React application
 │   ├── public/              # Static assets
 │   ├── src/
@@ -85,6 +85,36 @@ ops/
 3. View all system requests
 4. Access advanced analytics
 5. Monitor system-wide performance
+
+## Getting Started
+
+You need Node.js 18+ and MongoDB.
+
+```bash
+# Backend
+cd backend
+npm install
+npm run dev           # http://localhost:5000
+
+# Frontend, in a second terminal
+cd frontend
+npm install
+npm run dev
+```
+
+Create `backend/.env` with:
+
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=a_long_random_string
+JWT_EXPIRES_IN=7d
+FRONTEND_URL=http://localhost:5173
+```
+
+Create `frontend/.env` with `VITE_API_URL=http://localhost:5000/api/v1`. Without it, the frontend calls the deployed backend.
+
+To load sample data, run `node src/scripts/seedDemo.js` from `backend`.
 
 ## API Documentation
 
@@ -144,23 +174,15 @@ Get insights into your operations:
 - SLA compliance tracking
 - Approver performance metrics
 
-## Contributing
-
-This is an internal project, but if you'd like to suggest improvements:
-1. Create a feature branch
-2. Make your changes
-3. Test thoroughly
-4. Submit a pull request with a clear description
-
 ## Troubleshooting
 
 **Can't connect to database?**
 - Make sure MongoDB is running
-- Check your DATABASE connection string in .env
+- Check `MONGO_URI` in `backend/.env`
 - Verify MongoDB is listening on the correct port
 
 **Frontend can't reach API?**
-- Confirm backend is running on port 5001
+- Confirm the backend is running on port 5000
 - Check VITE_API_URL in frontend/.env
 - Look for CORS errors in browser console
 
@@ -173,10 +195,3 @@ This is an internal project, but if you'd like to suggest improvements:
 
 Internal use only - All rights reserved
 
-## Support
-
-For questions or issues, please contact the development team or create an issue in the repository.
-
----
-
-Built with ❤️ for streamlined operations
